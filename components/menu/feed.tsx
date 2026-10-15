@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { DishCard } from "@/components/menu/dish-card"
+import { CartProvider, useCart } from "@/components/menu/cart-context"
+import { CartDrawer } from "@/components/menu/cart-drawer"
+import { ShoppingCart, BellRing } from "lucide-react"
+import { toast } from "sonner"
 
 type Dish = {
   id: string
@@ -25,6 +29,8 @@ interface FeedProps {
   categories: Category[]
   restaurantId: string
   cdnHostname: string
+  hasOrders: boolean
+  tableCount: number
 }
 
 function getOrCreateSessionId(): string {
@@ -36,23 +42,25 @@ function getOrCreateSessionId(): string {
   } catch { return crypto.randomUUID() }
 }
 
-export function Feed({ dishes, categories, restaurantId, cdnHostname }: FeedProps) {
+function FeedInner({ dishes, categories, restaurantId, cdnHostname, hasOrders, tableCount }: FeedProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [likes, setLikes] = useState<Set<string>>(new Set())
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>(() =>
     Object.fromEntries(dishes.map(d => [d.id, d.like_count]))
   )
+  const [cartOpen, setCartOpen] = useState(false)
+  const [callingWaiter, setCallingWaiter] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
   const sessionId = useRef(getOrCreateSessionId())
   const pendingEvents = useRef<any[]>([])
+  const { count } = useCart()
 
   const filtered = selectedCategory
     ? dishes.filter(d => d.category_id === selectedCategory)
     : dishes
 
-  // Load persisted likes
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("instax_likes") ?? "[]")
@@ -60,7 +68,6 @@ export function Feed({ dishes, categories, restaurantId, cdnHostname }: FeedProp
     } catch {}
   }, [])
 
-  // IntersectionObserver to track active card
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -77,7 +84,6 @@ export function Feed({ dishes, categories, restaurantId, cdnHostname }: FeedProp
     return () => observer.disconnect()
   }, [filtered])
 
-  // Track view event when active dish changes
   useEffect(() => {
     const dish = filtered[activeIndex]
     if (!dish) return
@@ -89,7 +95,6 @@ export function Feed({ dishes, categories, restaurantId, cdnHostname }: FeedProp
     })
   }, [activeIndex, restaurantId])
 
-  // Flush events on page hide via sendBeacon
   useEffect(() => {
     function flush() {
       if (pendingEvents.current.length === 0) return
@@ -118,6 +123,34 @@ export function Feed({ dishes, categories, restaurantId, cdnHostname }: FeedProp
         body: JSON.stringify({ dish_id: dishId, session_id: sessionId.current, restaurant_id: restaurantId }),
       })
     } catch {}
+  }
+
+  async function handleCallWaiter() {
+    const tableStr = prompt("Qual é o número da sua mesa?")
+    const table = parseInt(tableStr ?? "")
+    if (!table || table < 1 || table > tableCount) {
+      toast.error(`Mesa inválida (1–${tableCount})`)
+      return
+    }
+    setCallingWaiter(true)
+    try {
+      const res = await fetch("/api/waiter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurant_id: restaurantId, table_number: table, session_id: sessionId.current }),
+      })
+      if (res.ok) {
+        toast.success("Garçom chamado!")
+      } else {
+        const { error } = await res.json()
+        if (error === "rate_limited") toast.error("Aguarde antes de chamar novamente")
+        else toast.error("Erro ao chamar garçom")
+      }
+    } catch {
+      toast.error("Erro de conexão")
+    } finally {
+      setCallingWaiter(false)
+    }
   }
 
   if (filtered.length === 0) {
@@ -173,11 +206,58 @@ export function Feed({ dishes, categories, restaurantId, cdnHostname }: FeedProp
               sessionId={sessionId.current}
               cdnHostname={cdnHostname}
               liked={likes.has(dish.id)}
+              hasOrders={hasOrders}
               onLike={handleLike}
             />
           </div>
         ))}
       </div>
+
+      {/* FABs */}
+      {hasOrders && (
+        <div className="fixed bottom-6 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+          {/* Chamar garçom */}
+          <button
+            onClick={handleCallWaiter}
+            disabled={callingWaiter}
+            className="pointer-events-auto flex items-center gap-2 bg-white/15 backdrop-blur-md text-white text-sm font-medium px-4 py-2.5 rounded-full border border-white/20 disabled:opacity-50"
+          >
+            <BellRing className="size-4" />
+            Garçom
+          </button>
+
+          {/* Cart button */}
+          <button
+            onClick={() => setCartOpen(true)}
+            className="pointer-events-auto relative flex items-center gap-2 bg-white text-black text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg"
+          >
+            <ShoppingCart className="size-4" />
+            Carrinho
+            {count > 0 && (
+              <span className="absolute -top-2 -right-2 size-5 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {count}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Cart drawer */}
+      {cartOpen && (
+        <CartDrawer
+          restaurantId={restaurantId}
+          tableCount={tableCount}
+          onClose={() => setCartOpen(false)}
+        />
+      )}
     </div>
+  )
+}
+
+export function Feed(props: FeedProps) {
+  return (
+    <CartProvider>
+      <FeedInner {...props} />
+    </CartProvider>
   )
 }

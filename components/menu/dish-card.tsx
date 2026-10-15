@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react"
 import { VideoPlayer } from "@/components/menu/video-player"
-import { Heart, ChevronUp, ChevronDown, Clock, Users } from "lucide-react"
+import { useCart } from "@/components/menu/cart-context"
+import { Heart, ChevronUp, ChevronDown, Clock, Users, ShoppingCart, Plus } from "lucide-react"
 
 type Dish = {
   id: string
@@ -25,12 +26,15 @@ interface DishCardProps {
   sessionId: string
   cdnHostname: string
   liked: boolean
+  hasOrders: boolean
   onLike: (dishId: string) => void
 }
 
-export function DishCard({ dish, active, preloadNext, sessionId, cdnHostname, liked, onLike }: DishCardProps) {
+export function DishCard({ dish, active, preloadNext, sessionId, cdnHostname, liked, hasOrders, onLike }: DishCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const { addItem, items } = useCart()
   const price = (dish.price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+  const inCart = items.find(i => i.dish_id === dish.id)
 
   return (
     <div className="relative w-full h-dvh snap-start overflow-hidden bg-black">
@@ -70,6 +74,28 @@ export function DishCard({ dish, active, preloadNext, sessionId, cdnHostname, li
           />
           <span className="text-white text-xs font-medium drop-shadow">{dish.like_count}</span>
         </button>
+
+        {hasOrders && (
+          <button
+            onClick={() => addItem({ dish_id: dish.id, name: dish.name, price_cents: dish.price_cents })}
+            className="flex flex-col items-center gap-1"
+          >
+            <div className="relative">
+              <ShoppingCart
+                className="size-7 drop-shadow"
+                stroke={inCart ? "#22c55e" : "white"}
+              />
+              {inCart && (
+                <span className="absolute -top-1.5 -right-1.5 size-4 rounded-full bg-green-500 text-[10px] text-white font-bold flex items-center justify-center leading-none">
+                  {inCart.quantity}
+                </span>
+              )}
+            </div>
+            <span className="text-white text-xs font-medium drop-shadow">
+              {inCart ? "No carrinho" : "Pedir"}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Bottom info */}
@@ -111,7 +137,6 @@ export function DishCard({ dish, active, preloadNext, sessionId, cdnHostname, li
           </div>
         )}
       </div>
-
     </div>
   )
 }

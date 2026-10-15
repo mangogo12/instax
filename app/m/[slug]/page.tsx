@@ -13,7 +13,7 @@ export default async function CardapioPage({ params }: Props) {
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, name, status")
+    .select("id, name, status, tables_count")
     .eq("slug", slug)
     .single()
 
@@ -32,7 +32,7 @@ export default async function CardapioPage({ params }: Props) {
 
   const admin = createAdminClient()
 
-  const [dishesRes, likesRes, categoriesRes] = await Promise.all([
+  const [dishesRes, likesRes, categoriesRes, planRes] = await Promise.all([
     supabase
       .from("dishes")
       .select("id, name, description, ingredients, serves, prep_time_min, price_cents, media_type, image_url, bunny_video_id, category_id")
@@ -48,6 +48,11 @@ export default async function CardapioPage({ params }: Props) {
       .select("id, name")
       .eq("restaurant_id", restaurant.id)
       .order("sort_order"),
+    admin
+      .from("restaurants")
+      .select("plan_id, plans!plan_id(has_orders)")
+      .eq("id", restaurant.id)
+      .single(),
   ])
 
   const likeMap: Record<string, number> = {}
@@ -60,6 +65,8 @@ export default async function CardapioPage({ params }: Props) {
     like_count: likeMap[d.id] ?? 0,
   }))
 
+  const planData = planRes.data as any
+  const hasOrders = planData?.plans?.has_orders === true
   const cdnHostname = process.env.BUNNY_CDN_HOSTNAME ?? ""
 
   return (
@@ -68,6 +75,8 @@ export default async function CardapioPage({ params }: Props) {
       categories={categoriesRes.data ?? []}
       restaurantId={restaurant.id}
       cdnHostname={cdnHostname}
+      hasOrders={hasOrders}
+      tableCount={restaurant.tables_count}
     />
   )
 }

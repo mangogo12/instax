@@ -328,6 +328,14 @@ export interface Database {
       get_my_restaurant_id: { Args: Record<string, never>; Returns: string | null }
       rpc_toggle_like: { Args: { p_dish_id: string; p_session_id: string }; Returns: boolean }
       rpc_batch_events: { Args: { p_events: string }; Returns: void }
+      rpc_create_order: {
+        Args: { p_restaurant_id: string; p_customer_name: string; p_table_number: number; p_items: string }
+        Returns: string
+      }
+      rpc_call_waiter: {
+        Args: { p_restaurant_id: string; p_table_number: number; p_session_id: string }
+        Returns: void
+      }
     }
   }
 }
