@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { PainelNav } from "@/components/painel/nav"
 import { Toaster } from "sonner"
 
-export const dynamic = "force-dynamic"
+export const instant = false
 
 export default async function RestaurantLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
