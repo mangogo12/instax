@@ -3,6 +3,8 @@ import { redirect } from "next/navigation"
 import { PainelNav } from "@/components/painel/nav"
 import { Toaster } from "sonner"
 
+export const dynamic = "force-dynamic"
+
 export default async function RestaurantLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
