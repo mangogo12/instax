@@ -20,14 +20,20 @@ create or replace function handle_new_user()
 returns trigger
 language plpgsql
 security definer
+set search_path = public
 as $$
+declare
+  v_role text;
 begin
-  insert into profiles (user_id, role, restaurant_id)
-  values (
-    new.id,
-    (new.raw_user_meta_data->>'role')::user_role,
-    (new.raw_user_meta_data->>'restaurant_id')::uuid
-  );
+  v_role := new.raw_user_meta_data->>'role';
+  if v_role is not null then
+    insert into public.profiles (user_id, role, restaurant_id)
+    values (
+      new.id,
+      v_role::public.user_role,
+      (new.raw_user_meta_data->>'restaurant_id')::uuid
+    );
+  end if;
   return new;
 end;
 $$;

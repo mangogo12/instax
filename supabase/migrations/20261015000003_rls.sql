@@ -19,7 +19,7 @@ create policy "plans_master_all" on plans for all using (get_my_role() = 'master
 
 -- restaurants
 create policy "restaurants_anon_read_active" on restaurants
-  for select using (status = 'active');
+  for select to anon using (status = 'active');
 
 create policy "restaurants_admin_read_own" on restaurants
   for select using (id = get_my_restaurant_id());
@@ -56,11 +56,8 @@ create policy "payments_master_all" on payments
 
 -- categories
 create policy "categories_anon_read_active" on categories
-  for select using (
-    exists (
-      select 1 from restaurants r
-      where r.id = restaurant_id and r.status = 'active'
-    )
+  for select to anon using (
+    exists (select 1 from restaurants r where r.id = restaurant_id and r.status = 'active')
   );
 
 create policy "categories_admin_all" on categories
@@ -71,11 +68,8 @@ create policy "categories_master_all" on categories
 
 -- dishes
 create policy "dishes_anon_read_active" on dishes
-  for select using (
-    exists (
-      select 1 from restaurants r
-      where r.id = restaurant_id and r.status = 'active'
-    )
+  for select to anon using (
+    exists (select 1 from restaurants r where r.id = restaurant_id and r.status = 'active')
   );
 
 create policy "dishes_admin_all" on dishes
