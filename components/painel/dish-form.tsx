@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { createDish, updateDish } from "@/lib/actions/dishes"
+import { createCategoryInline } from "@/lib/actions/categories"
 import { ImageUpload } from "@/components/painel/image-upload"
 import { VideoUpload } from "@/components/painel/video-upload"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { Plus, Check, X } from "lucide-react"
 
 type Category = { id: string; name: string }
 
@@ -37,9 +39,14 @@ interface DishFormProps {
   dish?: DishRow
 }
 
-export function DishForm({ categories, restaurantId, dish }: DishFormProps) {
+export function DishForm({ categories: initialCategories, restaurantId, dish }: DishFormProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const [categories, setCategories] = useState(initialCategories)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(dish?.category_id ?? null)
+  const [addingCat, setAddingCat] = useState(false)
+  const [newCatName, setNewCatName] = useState("")
+  const [savingCat, setSavingCat] = useState(false)
   const [mediaType, setMediaType] = useState<"image" | "video">(dish?.media_type ?? "image")
   const [imageUrl, setImageUrl] = useState(dish?.image_url ?? "")
   const [videoId, setVideoId] = useState(dish?.bunny_video_id ?? "")
@@ -47,6 +54,21 @@ export function DishForm({ categories, restaurantId, dish }: DishFormProps) {
   const [isFeatured, setIsFeatured] = useState(dish?.is_featured ?? false)
   const [priceStr, setPriceStr] = useState(dish ? (dish.price_cents / 100).toFixed(2).replace(".", ",") : "")
   const [name, setName] = useState(dish?.name ?? "")
+
+  async function handleCreateCategory() {
+    if (!newCatName.trim()) return
+    setSavingCat(true)
+    const res = await createCategoryInline(newCatName.trim())
+    setSavingCat(false)
+    if (res.error) { toast.error(res.error); return }
+    if (res.category) {
+      setCategories(prev => [...prev, res.category!])
+      setSelectedCategory(res.category!.id)
+    }
+    setNewCatName("")
+    setAddingCat(false)
+    toast.success("Categoria criada")
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -90,13 +112,36 @@ export function DishForm({ categories, restaurantId, dish }: DishFormProps) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="category_id">Categoria</Label>
-          <Select name="category_id" defaultValue={dish?.category_id} required>
-            <SelectTrigger id="category_id"><SelectValue placeholder="Selecione…" /></SelectTrigger>
+          <Label>Categoria</Label>
+          <input type="hidden" name="category_id" value={selectedCategory ?? ""} />
+          <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
+            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
             <SelectContent>
               {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          {addingCat ? (
+            <div className="flex gap-1.5 mt-1">
+              <Input
+                autoFocus
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleCreateCategory() } if (e.key === "Escape") setAddingCat(false) }}
+                placeholder="Nome da categoria"
+                className="h-8 text-sm"
+              />
+              <Button type="button" size="sm" className="h-8 px-2" onClick={handleCreateCategory} disabled={savingCat}>
+                <Check className="size-4" />
+              </Button>
+              <Button type="button" size="sm" variant="outline" className="h-8 px-2" onClick={() => setAddingCat(false)}>
+                <X className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAddingCat(true)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-0.5 w-fit">
+              <Plus className="size-3" /> Nova categoria
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">

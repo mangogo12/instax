@@ -43,6 +43,41 @@ export async function createCategory(formData: FormData) {
   return { success: true }
 }
 
+export async function createCategoryInline(name: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Não autenticado" }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("restaurant_id")
+    .eq("user_id", user.id)
+    .single()
+
+  if (!profile?.restaurant_id) return { error: "Restaurante não encontrado" }
+
+  const parsed = categorySchema.safeParse({ name })
+  if (!parsed.success) return { error: "Nome inválido" }
+
+  const { data: last } = await supabase
+    .from("categories")
+    .select("sort_order")
+    .eq("restaurant_id", profile.restaurant_id)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .single()
+
+  const { data, error } = await supabase
+    .from("categories")
+    .insert({ restaurant_id: profile.restaurant_id, name: parsed.data.name, sort_order: (last?.sort_order ?? -1) + 1 })
+    .select("id, name")
+    .single()
+
+  if (error) return { error: error.message }
+  revalidatePath("/painel/categorias")
+  return { category: data }
+}
+
 export async function updateCategory(id: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
