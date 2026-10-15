@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { VideoPlayer } from "@/components/menu/video-player"
 import { useCart } from "@/components/menu/cart-context"
-import { Heart, ChevronUp, ChevronDown, Clock, Users, ShoppingCart, Plus } from "lucide-react"
+import { Heart, Clock, Users, ShoppingCart } from "lucide-react"
 
 type Dish = {
   id: string
@@ -116,23 +116,19 @@ export function DishCard({ dish, active, preloadNext, sessionId, cdnHostname, li
           </div>
         </div>
 
-        {/* Expandable panel */}
-        {(dish.description || dish.ingredients) && (
-          <div className="mt-3">
-            <button
-              onClick={() => setExpanded(e => !e)}
-              className="flex items-center gap-1 text-white/70 text-xs"
-            >
-              {expanded ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
-              {expanded ? "Ocultar detalhes" : "Ver detalhes"}
-            </button>
-            {expanded && (
-              <div className="mt-2 rounded-xl bg-black/60 backdrop-blur-sm p-4 text-sm text-white/90 space-y-2">
-                {dish.description && <p>{dish.description}</p>}
-                {dish.ingredients && (
-                  <p className="text-white/70 text-xs"><span className="text-white/50 uppercase tracking-wide text-[10px]">Ingredientes</span><br />{dish.ingredients}</p>
-                )}
-              </div>
+        {/* Description — inline like Instagram */}
+        {dish.description && (
+          <div className="mt-2">
+            <p className={`text-white/80 text-sm leading-snug ${expanded ? "" : "line-clamp-2"}`}>
+              {dish.description}
+            </p>
+            {dish.description.length > 80 && (
+              <button
+                onClick={() => setExpanded(e => !e)}
+                className="text-white/50 text-xs mt-0.5"
+              >
+                {expanded ? "ver menos" : "ver mais"}
+              </button>
             )}
           </div>
         )}
