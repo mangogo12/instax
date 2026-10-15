@@ -215,7 +215,7 @@ function FeedInner({ dishes, categories, restaurantId, cdnHostname, hasOrders, t
 
       {/* FABs */}
       {hasOrders && (
-        <div className="fixed bottom-6 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+        <div className="fixed bottom-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
           {/* Chamar garçom */}
           <button
             onClick={handleCallWaiter}

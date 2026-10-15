@@ -99,7 +99,7 @@ export function DishCard({ dish, active, preloadNext, sessionId, cdnHostname, li
       </div>
 
       {/* Bottom info */}
-      <div className="absolute bottom-0 left-0 right-0 p-5">
+      <div className={`absolute bottom-0 left-0 right-0 p-5 ${hasOrders ? "pb-20" : ""}`}>
         <div className="flex items-end justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h2 className="text-white text-xl font-bold leading-tight drop-shadow">{dish.name}</h2>
