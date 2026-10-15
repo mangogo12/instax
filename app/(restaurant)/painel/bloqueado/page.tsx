@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 
 export default async function BloqueadoPage() {
   const supabase = await createClient()
@@ -40,11 +40,9 @@ export default async function BloqueadoPage() {
             O acesso foi suspenso por inadimplência. Regularize o pagamento para reativar.
           </p>
           {paymentLink && (
-            <Button asChild>
-              <a href={paymentLink} target="_blank" rel="noopener noreferrer">
-                Pagar agora
-              </a>
-            </Button>
+            <a href={paymentLink} target="_blank" rel="noopener noreferrer" className={buttonVariants()}>
+              Pagar agora
+            </a>
           )}
         </CardContent>
       </Card>

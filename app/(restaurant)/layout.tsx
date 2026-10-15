@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { PainelNav } from "@/components/painel/nav"
+import { Toaster } from "sonner"
 
 export default async function RestaurantLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) redirect("/login")
 
   const { data: profile } = await supabase
@@ -18,12 +19,22 @@ export default async function RestaurantLayout({ children }: { children: React.R
   if (profile.restaurant_id) {
     const { data: restaurant } = await supabase
       .from("restaurants")
-      .select("status")
+      .select("status, name")
       .eq("id", profile.restaurant_id)
       .single()
 
     if (restaurant?.status === "blocked") redirect("/painel/bloqueado")
     if (restaurant?.status === "canceled") redirect("/login")
+
+    return (
+      <div className="flex h-screen overflow-hidden bg-background">
+        <PainelNav restaurantName={restaurant?.name ?? ""} />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+        <Toaster richColors />
+      </div>
+    )
   }
 
   return <>{children}</>
