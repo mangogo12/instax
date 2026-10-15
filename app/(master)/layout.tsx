@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { MasterNav } from "@/components/master/nav"
+import { Toaster } from "sonner"
 
 export const instant = false
 
@@ -17,5 +19,13 @@ export default async function MasterLayout({ children }: { children: React.React
 
   if (profile?.role !== "master") redirect("/login")
 
-  return <>{children}</>
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <MasterNav />
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
+      <Toaster richColors />
+    </div>
+  )
 }
