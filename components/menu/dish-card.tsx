@@ -1,9 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { VideoPlayer } from "@/components/menu/video-player"
 import { useCart } from "@/components/menu/cart-context"
-import { Heart, Clock, Users, ShoppingCart } from "lucide-react"
+import { Heart, Plus, Play } from "lucide-react"
 
 type Dish = {
   id: string
@@ -21,117 +19,80 @@ type Dish = {
 
 interface DishCardProps {
   dish: Dish
-  active: boolean
-  preloadNext: boolean
-  sessionId: string
   cdnHostname: string
   liked: boolean
   hasOrders: boolean
   onLike: (dishId: string) => void
+  onClick: () => void
 }
 
-export function DishCard({ dish, active, preloadNext, sessionId, cdnHostname, liked, hasOrders, onLike }: DishCardProps) {
-  const [expanded, setExpanded] = useState(false)
+export function DishCard({ dish, cdnHostname, liked, hasOrders, onLike, onClick }: DishCardProps) {
   const { addItem, items } = useCart()
   const price = (dish.price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
   const inCart = items.find(i => i.dish_id === dish.id)
 
+  const imgUrl =
+    dish.media_type === "video" && dish.bunny_video_id && cdnHostname
+      ? `https://${cdnHostname}/${dish.bunny_video_id}/thumbnail.jpg`
+      : dish.image_url
+
   return (
-    <div className="relative w-full h-dvh snap-start overflow-hidden bg-black">
-      {/* Media */}
-      {dish.media_type === "video" && dish.bunny_video_id ? (
-        <VideoPlayer
-          videoId={dish.bunny_video_id}
-          cdnHostname={cdnHostname}
-          active={active}
-          preload={preloadNext}
-        />
-      ) : dish.image_url ? (
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${dish.image_url})`,
-            animation: active ? "kenBurns 10s ease-in-out infinite alternate" : "none",
-          }}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-zinc-900" />
-      )}
-
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-      {/* Right actions */}
-      <div className="absolute right-4 bottom-32 flex flex-col items-center gap-5">
-        <button
-          onClick={() => onLike(dish.id)}
-          className="flex flex-col items-center gap-1"
-        >
-          <Heart
-            className="size-7 drop-shadow"
-            fill={liked ? "#ef4444" : "none"}
-            stroke={liked ? "#ef4444" : "white"}
-          />
-          <span className="text-white text-xs font-medium drop-shadow">{dish.like_count}</span>
-        </button>
-
-        {hasOrders && (
-          <button
-            onClick={() => addItem({ dish_id: dish.id, name: dish.name, price_cents: dish.price_cents })}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className="relative">
-              <ShoppingCart
-                className="size-7 drop-shadow"
-                stroke={inCart ? "#22c55e" : "white"}
-              />
-              {inCart && (
-                <span className="absolute -top-1.5 -right-1.5 size-4 rounded-full bg-green-500 text-[10px] text-white font-bold flex items-center justify-center leading-none">
-                  {inCart.quantity}
-                </span>
-              )}
-            </div>
-            <span className="text-white text-xs font-medium drop-shadow">
-              {inCart ? "No carrinho" : "Pedir"}
-            </span>
-          </button>
+    <div
+      className="rounded-2xl overflow-hidden bg-zinc-900 flex flex-col cursor-pointer active:scale-[0.97] transition-transform"
+      data-dish-id={dish.id}
+      onClick={onClick}
+    >
+      {/* Image */}
+      <div className="relative aspect-[4/3] bg-zinc-800">
+        {imgUrl ? (
+          <img src={imgUrl} alt={dish.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-zinc-700 text-4xl select-none">🍽️</div>
         )}
+        {dish.media_type === "video" && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="size-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+              <Play className="size-4 text-white fill-white ml-0.5" />
+            </div>
+          </div>
+        )}
+        <button
+          onClick={e => { e.stopPropagation(); onLike(dish.id) }}
+          className="absolute top-2 right-2 size-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+        >
+          <Heart className="size-3.5" fill={liked ? "#ef4444" : "none"} stroke={liked ? "#ef4444" : "white"} strokeWidth={2} />
+        </button>
       </div>
 
-      {/* Bottom info */}
-      <div className={`absolute bottom-0 left-0 right-0 p-5 ${hasOrders ? "pb-20" : ""}`}>
-        <div className="flex items-end justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-white text-xl font-bold leading-tight drop-shadow">{dish.name}</h2>
-            <p className="text-white/80 text-lg font-semibold mt-0.5 drop-shadow">{price}</p>
-
-            <div className="flex gap-3 mt-1.5">
-              {dish.serves && (
-                <span className="flex items-center gap-1 text-white/70 text-xs"><Users className="size-3" />{dish.serves} pessoa{dish.serves > 1 ? "s" : ""}</span>
-              )}
-              {dish.prep_time_min && (
-                <span className="flex items-center gap-1 text-white/70 text-xs"><Clock className="size-3" />{dish.prep_time_min} min</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Description — inline like Instagram */}
+      {/* Info */}
+      <div className="p-3 flex flex-col gap-1 flex-1">
+        <p className="text-white text-sm font-semibold leading-tight line-clamp-2">{dish.name}</p>
         {dish.description && (
-          <div className="mt-2">
-            <p className={`text-white/80 text-sm leading-snug ${expanded ? "" : "line-clamp-2"}`}>
-              {dish.description}
-            </p>
-            {dish.description.length > 80 && (
-              <button
-                onClick={() => setExpanded(e => !e)}
-                className="text-white/50 text-xs mt-0.5"
-              >
-                {expanded ? "ver menos" : "ver mais"}
-              </button>
+          <p className="text-zinc-400 text-xs leading-snug line-clamp-2">{dish.description}</p>
+        )}
+        <div className="flex items-center justify-between mt-auto pt-2">
+          <div>
+            <span className="text-green-400 text-sm font-bold">{price}</span>
+            {dish.like_count > 0 && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <Heart className="size-3 fill-zinc-500 stroke-none" />
+                <span className="text-zinc-500 text-[11px]">{dish.like_count}</span>
+              </div>
             )}
           </div>
-        )}
+          {hasOrders && (
+            <button
+              onClick={e => { e.stopPropagation(); addItem({ dish_id: dish.id, name: dish.name, price_cents: dish.price_cents }) }}
+              className={`size-8 rounded-full flex items-center justify-center transition-colors ${
+                inCart ? "bg-green-500" : "bg-zinc-700 active:bg-zinc-600"
+              }`}
+            >
+              {inCart
+                ? <span className="text-white text-xs font-bold">{inCart.quantity}</span>
+                : <Plus className="size-4 text-white" />}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

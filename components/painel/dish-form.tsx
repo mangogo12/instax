@@ -114,8 +114,14 @@ export function DishForm({ categories: initialCategories, restaurantId, dish }: 
         <div className="flex flex-col gap-1.5">
           <Label>Categoria</Label>
           <input type="hidden" name="category_id" value={selectedCategory ?? ""} />
-          <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
-            <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
+          <Select value={selectedCategory ?? ""} onValueChange={setSelectedCategory} required>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione…">
+                {selectedCategory
+                  ? (categories.find(c => c.id === selectedCategory)?.name ?? "Selecione…")
+                  : <span className="text-muted-foreground">Selecione…</span>}
+              </SelectValue>
+            </SelectTrigger>
             <SelectContent>
               {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
