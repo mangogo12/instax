@@ -1,13 +1,10 @@
 "use client"
 
-import { useState, useOptimistic, useTransition } from "react"
-import { createCategory, updateCategory, deleteCategory, reorderCategories } from "@/lib/actions/categories"
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { useState, useTransition } from "react"
+import { createCategoryInline, updateCategory, deleteCategory, reorderCategories } from "@/lib/actions/categories"
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, KeyboardSensor } from "@dnd-kit/core"
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { KeyboardSensor } from "@dnd-kit/core"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { GripVertical, Pencil, Trash2, Check, X, Plus } from "lucide-react"
 import { toast } from "sonner"
 
@@ -21,6 +18,7 @@ function SortableCategory({ cat, onEdit, onDelete }: { cat: Category; onEdit: (i
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
 
   async function handleEdit() {
+    if (!name.trim() || name === cat.name) { setEditing(false); return }
     const fd = new FormData()
     fd.set("name", name)
     const res = await updateCategory(cat.id, fd)
@@ -30,21 +28,48 @@ function SortableCategory({ cat, onEdit, onDelete }: { cat: Category; onEdit: (i
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
-      <button {...attributes} {...listeners} className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 rounded-xl bg-[#161616] border border-white/5 px-4 py-3"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        suppressHydrationWarning
+        className="text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing shrink-0"
+      >
         <GripVertical className="size-4" />
       </button>
+
       {editing ? (
         <>
-          <Input value={name} onChange={e => setName(e.target.value)} className="h-7 flex-1 text-sm" autoFocus onKeyDown={e => { if (e.key === "Enter") handleEdit(); if (e.key === "Escape") { setEditing(false); setName(cat.name) } }} />
-          <Button size="icon-sm" variant="ghost" onClick={handleEdit}><Check className="size-3.5" /></Button>
-          <Button size="icon-sm" variant="ghost" onClick={() => { setEditing(false); setName(cat.name) }}><X className="size-3.5" /></Button>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="flex-1 bg-transparent text-sm text-white outline-none border-b border-orange-500/60 pb-0.5"
+            autoFocus
+            onKeyDown={e => {
+              if (e.key === "Enter") handleEdit()
+              if (e.key === "Escape") { setEditing(false); setName(cat.name) }
+            }}
+          />
+          <button onClick={handleEdit} className="text-green-400 hover:text-green-300 shrink-0">
+            <Check className="size-4" />
+          </button>
+          <button onClick={() => { setEditing(false); setName(cat.name) }} className="text-zinc-500 hover:text-zinc-300 shrink-0">
+            <X className="size-4" />
+          </button>
         </>
       ) : (
         <>
-          <span className="flex-1 text-sm">{cat.name}</span>
-          <Button size="icon-sm" variant="ghost" onClick={() => setEditing(true)}><Pencil className="size-3.5" /></Button>
-          <Button size="icon-sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => onDelete(cat.id)}><Trash2 className="size-3.5" /></Button>
+          <span className="flex-1 text-sm text-zinc-200">{cat.name}</span>
+          <button onClick={() => setEditing(true)} className="text-zinc-600 hover:text-zinc-300 shrink-0">
+            <Pencil className="size-3.5" />
+          </button>
+          <button onClick={() => onDelete(cat.id)} className="text-zinc-600 hover:text-red-400 shrink-0">
+            <Trash2 className="size-3.5" />
+          </button>
         </>
       )}
     </div>
@@ -55,6 +80,7 @@ export function CategoryList({ categories: initial }: { categories: Category[] }
   const [categories, setCategories] = useState(initial)
   const [newName, setNewName] = useState("")
   const [adding, setAdding] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [, startTransition] = useTransition()
 
   const sensors = useSensors(
@@ -64,10 +90,11 @@ export function CategoryList({ categories: initial }: { categories: Category[] }
 
   async function handleAdd() {
     if (!newName.trim()) return
-    const fd = new FormData()
-    fd.set("name", newName)
-    const res = await createCategory(fd)
+    setSaving(true)
+    const res = await createCategoryInline(newName.trim())
+    setSaving(false)
     if (res.error) { toast.error(res.error); return }
+    setCategories(c => [...c, { id: res.category!.id, name: res.category!.name, sort_order: c.length }])
     toast.success("Categoria criada")
     setNewName("")
     setAdding(false)
@@ -91,7 +118,7 @@ export function CategoryList({ categories: initial }: { categories: Category[] }
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
           {categories.map(cat => (
@@ -106,26 +133,45 @@ export function CategoryList({ categories: initial }: { categories: Category[] }
       </DndContext>
 
       {categories.length === 0 && !adding && (
-        <p className="text-sm text-muted-foreground text-center py-8">Nenhuma categoria. Adicione a primeira.</p>
+        <p className="text-sm text-zinc-600 text-center py-10">Nenhuma categoria ainda.</p>
       )}
 
       {adding ? (
-        <div className="flex gap-2">
-          <Input
+        <div className="flex gap-2 mt-1">
+          <input
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Nome da categoria"
             autoFocus
-            onKeyDown={e => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") { setAdding(false); setNewName("") } }}
+            disabled={saving}
+            onKeyDown={e => {
+              if (e.key === "Enter") handleAdd()
+              if (e.key === "Escape") { setAdding(false); setNewName("") }
+            }}
+            className="flex-1 rounded-xl bg-[#161616] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-orange-500/50"
           />
-          <Button size="sm" onClick={handleAdd}>Salvar</Button>
-          <Button size="sm" variant="outline" onClick={() => { setAdding(false); setNewName("") }}>Cancelar</Button>
+          <button
+            onClick={handleAdd}
+            disabled={saving}
+            className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 font-medium disabled:opacity-50 transition-colors"
+          >
+            {saving ? "…" : "Salvar"}
+          </button>
+          <button
+            onClick={() => { setAdding(false); setNewName("") }}
+            className="rounded-xl border border-white/10 text-zinc-400 hover:text-white text-sm px-3 py-2 transition-colors"
+          >
+            <X className="size-4" />
+          </button>
         </div>
       ) : (
-        <Button variant="outline" size="sm" className="self-start" onClick={() => setAdding(true)}>
-          <Plus className="size-4 mr-1" />
+        <button
+          onClick={() => setAdding(true)}
+          className="mt-1 flex items-center gap-2 self-start rounded-xl border border-dashed border-white/10 px-4 py-2.5 text-sm text-zinc-500 hover:text-zinc-200 hover:border-white/20 transition-colors"
+        >
+          <Plus className="size-4" />
           Nova categoria
-        </Button>
+        </button>
       )}
     </div>
   )

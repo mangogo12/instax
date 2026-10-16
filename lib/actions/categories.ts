@@ -116,10 +116,9 @@ export async function deleteCategory(id: string) {
 
 export async function reorderCategories(ids: string[]) {
   const supabase = await createClient()
-  await Promise.all(
-    ids.map((id, index) =>
-      supabase.from("categories").update({ sort_order: index }).eq("id", id)
-    )
+  await supabase.from("categories").upsert(
+    ids.map((id, index) => ({ id, sort_order: index })),
+    { onConflict: "id" }
   )
   revalidatePath("/painel/categorias")
 }

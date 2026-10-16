@@ -39,8 +39,8 @@ function SortableDish({
   const price = (dish.price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
-      <button {...attributes} {...listeners} className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing shrink-0">
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl bg-[#161616] border border-white/5 px-4 py-3">
+      <button {...attributes} {...listeners} suppressHydrationWarning className="text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing shrink-0">
         <GripVertical className="size-4" />
       </button>
 
@@ -51,8 +51,8 @@ function SortableDish({
       )}
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{dish.name}</p>
-        <p className="text-xs text-muted-foreground">{categoryName} · {price}</p>
+        <p className="text-sm font-medium text-zinc-100 truncate">{dish.name}</p>
+        <p className="text-xs text-zinc-500">{categoryName} · {price}</p>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
@@ -118,7 +118,7 @@ export function DishList({ dishes: initial, categories }: { dishes: Dish[]; cate
   }
 
   if (dishes.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-12">Nenhum prato. Crie o primeiro!</p>
+    return <p className="text-sm text-zinc-600 text-center py-12">Nenhum prato ainda.</p>
   }
 
   return (
