@@ -18,8 +18,11 @@ export default async function CategoriasPage() {
     .order("sort_order")
 
   return (
-    <div className="p-6 max-w-2xl">
-      <h1 className="text-xl font-semibold mb-6">Categorias</h1>
+    <div className="p-8 max-w-2xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-white">Categorias</h1>
+        <p className="text-zinc-500 text-sm mt-1">Organize os pratos por categoria</p>
+      </div>
       <CategoryList categories={categories ?? []} />
     </div>
   )

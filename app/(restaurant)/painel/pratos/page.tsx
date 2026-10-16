@@ -22,11 +22,16 @@ export default async function PratosPage() {
   ])
 
   return (
-    <div className="p-6 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Pratos</h1>
+    <div className="p-8 max-w-4xl">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Pratos</h1>
+          <p className="text-zinc-500 text-sm mt-1">Gerencie os itens do seu cardápio</p>
+        </div>
         <Link href="/painel/pratos/nova">
-          <Button size="sm"><Plus className="size-4 mr-1" />Novo prato</Button>
+          <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white border-0 rounded-xl px-4">
+            <Plus className="size-4 mr-1.5" />Novo prato
+          </Button>
         </Link>
       </div>
       <DishList dishes={dishes ?? []} categories={categories ?? []} />

@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ViewsChart } from "@/components/painel/dashboard-chart"
 import { Eye, ShoppingBag, TrendingUp, Heart } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export const instant = false
 
@@ -89,97 +88,58 @@ export default async function DashboardPage() {
   const totalLikes = likesRes.count ?? 0
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Métricas do seu cardápio</p>
+    <div className="p-8 space-y-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <p className="text-zinc-500 text-sm mt-1">Métricas do seu cardápio</p>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Eye className="size-4" /> Views hoje
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{todayViews.toLocaleString("pt-BR")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <ShoppingBag className="size-4" /> Pedidos hoje
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{todayOrders.length}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="size-4" /> Receita hoje
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {(todayRevenue / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Heart className="size-4" /> Likes totais
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{totalLikes.toLocaleString("pt-BR")}</p>
-          </CardContent>
-        </Card>
+        {[
+          { icon: Eye, label: "Views hoje", value: todayViews.toLocaleString("pt-BR"), color: "text-blue-400", bg: "bg-blue-500/10" },
+          { icon: ShoppingBag, label: "Pedidos hoje", value: todayOrders.length.toLocaleString("pt-BR"), color: "text-orange-400", bg: "bg-orange-500/10" },
+          { icon: TrendingUp, label: "Receita hoje", value: (todayRevenue / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), color: "text-green-400", bg: "bg-green-500/10" },
+          { icon: Heart, label: "Likes totais", value: totalLikes.toLocaleString("pt-BR"), color: "text-red-400", bg: "bg-red-500/10" },
+        ].map(({ icon: Icon, label, value, color, bg }) => (
+          <div key={label} className="rounded-2xl bg-[#161616] border border-white/5 p-5">
+            <div className={`size-10 rounded-xl ${bg} flex items-center justify-center mb-4`}>
+              <Icon className={`size-5 ${color}`} />
+            </div>
+            <p className="text-zinc-500 text-xs font-medium">{label}</p>
+            <p className="text-white text-2xl font-bold mt-1">{value}</p>
+          </div>
+        ))}
       </div>
 
       {/* Views chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Views por hora (últimas 24h)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ViewsChart data={chartData} />
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl bg-[#161616] border border-white/5 p-6">
+        <p className="text-white text-sm font-semibold mb-4">Views por hora (últimas 24h)</p>
+        <ViewsChart data={chartData} />
+      </div>
 
       {/* Top dishes */}
       {topDishes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Pratos mais vistos (7 dias)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {topDishes.map((dish, i) => (
-                <li key={dish.name} className="flex items-center gap-3">
-                  <span className="text-muted-foreground text-xs w-4">{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{dish.name}</p>
-                    <div className="h-1.5 mt-1 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full"
-                        style={{ width: `${Math.round((dish.count / (topDishes[0]?.count || 1)) * 100)}%` }}
-                      />
-                    </div>
+        <div className="rounded-2xl bg-[#161616] border border-white/5 p-6">
+          <p className="text-white text-sm font-semibold mb-4">Pratos mais vistos (7 dias)</p>
+          <ul className="space-y-3">
+            {topDishes.map((dish, i) => (
+              <li key={dish.name} className="flex items-center gap-3">
+                <span className="text-zinc-600 text-xs font-mono w-4">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-zinc-300 text-sm truncate">{dish.name}</p>
+                  <div className="h-1.5 mt-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500 rounded-full"
+                      style={{ width: `${Math.round((dish.count / (topDishes[0]?.count || 1)) * 100)}%` }}
+                    />
                   </div>
-                  <span className="text-muted-foreground text-xs whitespace-nowrap">{dish.count} views</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+                </div>
+                <span className="text-zinc-500 text-xs whitespace-nowrap">{dish.count} views</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   )
