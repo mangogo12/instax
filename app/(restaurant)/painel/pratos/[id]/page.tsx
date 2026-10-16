@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { DishForm } from "@/components/painel/dish-form"
 import { notFound } from "next/navigation"
 
+export const instant = false
+
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -27,8 +29,11 @@ export default async function EditarPratoPage({ params }: Props) {
   if (!dish) notFound()
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-6">Editar prato</h1>
+    <div className="p-8 max-w-2xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-white">Editar prato</h1>
+        <p className="text-zinc-500 text-sm mt-1">Atualize as informações do prato</p>
+      </div>
       <DishForm categories={categories ?? []} restaurantId={restaurantId} dish={dish} />
     </div>
   )

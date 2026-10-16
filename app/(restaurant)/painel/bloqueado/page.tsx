@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { buttonVariants } from "@/components/ui/button"
 
+export const instant = false
+
 export default async function BloqueadoPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

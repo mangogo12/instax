@@ -4,6 +4,8 @@ import { DishList } from "@/components/painel/dish-list"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 
+export const instant = false
+
 export default async function PratosPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

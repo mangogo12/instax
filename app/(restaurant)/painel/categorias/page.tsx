@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { CategoryList } from "@/components/painel/category-list"
 
+export const instant = false
+
 export default async function CategoriasPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
