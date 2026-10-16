@@ -130,9 +130,10 @@ export async function toggleDishFeatured(id: string, value: boolean) {
 
 export async function reorderDishes(ids: string[]) {
   const supabase = await createClient()
-  await supabase.from("dishes").upsert(
-    ids.map((id, index) => ({ id, sort_order: index })),
-    { onConflict: "id" }
+  await Promise.all(
+    ids.map((id, index) =>
+      supabase.from("dishes").update({ sort_order: index }).eq("id", id)
+    )
   )
   revalidatePath("/painel/pratos")
 }
